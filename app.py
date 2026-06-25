@@ -1,5 +1,6 @@
 import streamlit as st
 import streamlit.components.v1 as components
+import re # นำเข้าไลบรารีนี้เพิ่มเพื่อช่วยดึงรหัสวีดีโอ
 
 # ตั้งค่าหน้าเว็บ
 st.set_page_config(page_title="TikTok Affiliate Viewer", layout="wide")
@@ -14,23 +15,31 @@ if tiktok_url:
     st.markdown("---")
     st.subheader("📺 วีดีโอของคุณ")
     
-    # ดึง Video ID จาก URL คร่าวๆ
-    video_id = tiktok_url.split('/')[-1].split('?')[0]
+    # ใช้ Regex ดึง Video ID ออกมาจาก URL แบบแม่นยำขึ้น
+    match = re.search(r"video/(\d+)", tiktok_url)
     
-    # โค้ด HTML สำหรับฝังวีดีโอ TikTok
-    tiktok_embed_code = f"""
-    <blockquote class="tiktok-embed" cite="{tiktok_url}" data-video-id="{video_id}" style="max-width: 605px;min-width: 325px;" >
-      <section>
-        <a target="_blank" href="{tiktok_url}">กำลังโหลดวีดีโอ...</a>
-      </section>
-    </blockquote>
-    <script async src="https://www.tiktok.com/embed.js"></script>
-    """
-    
-    # แสดงผลวีดีโอ (ต้องกำหนดความสูงให้พอดีกับวีดีโอแนวตั้ง)
-    components.html(tiktok_embed_code, height=750)
-    
-    # พื้นที่สำหรับใส่ลูกเล่นเพิ่มเติม เช่น จดบันทึก
-    notes = st.text_area("📝 บันทึกข้อมูลเกี่ยวกับสินค้า/ตะกร้านี้:")
-    if st.button("บันทึกข้อมูล"):
-        st.success("บันทึกข้อมูลสำเร็จ! (ในเวอร์ชันจริงคุณสามารถเชื่อมกับ Database ได้)")
+    if match:
+        video_id = match.group(1)
+        
+        # ใช้ iframe เรียกตัวเล่นวีดีโอของ TikTok โดยตรง
+        iframe_code = f"""
+        <div style="display: flex; justify-content: center;">
+            <iframe 
+                src="https://www.tiktok.com/embed/v2/{video_id}" 
+                style="width: 325px; height: 750px; border: none; border-radius: 12px;" 
+                allow="autoplay; encrypted-media;" 
+                allowfullscreen>
+            </iframe>
+        </div>
+        """
+        
+        # แสดงผลวีดีโอ
+        components.html(iframe_code, height=780)
+        
+        # พื้นที่สำหรับใส่ลูกเล่นเพิ่มเติม เช่น จดบันทึก
+        notes = st.text_area("📝 บันทึกข้อมูลเกี่ยวกับสินค้า/ตะกร้านี้:")
+        if st.button("บันทึกข้อมูล"):
+            st.success("บันทึกข้อมูลสำเร็จ!")
+            
+    else:
+        st.error("❌ ไม่พบ Video ID ในลิงก์ กรุณาตรวจสอบลิงก์อีกครั้ง (ลิงก์ควรมีคำว่า /video/ตัวเลข)")
