@@ -1,6 +1,5 @@
 import streamlit as st
-import streamlit.components.v1 as components
-import re # นำเข้าไลบรารีนี้เพิ่มเพื่อช่วยดึงรหัสวีดีโอ
+import re
 
 # ตั้งค่าหน้าเว็บ
 st.set_page_config(page_title="TikTok Affiliate Viewer", layout="wide")
@@ -15,13 +14,13 @@ if tiktok_url:
     st.markdown("---")
     st.subheader("📺 วีดีโอของคุณ")
     
-    # ใช้ Regex ดึง Video ID ออกมาจาก URL แบบแม่นยำขึ้น
+    # ดึง Video ID
     match = re.search(r"video/(\d+)", tiktok_url)
     
     if match:
         video_id = match.group(1)
         
-        # ใช้ iframe เรียกตัวเล่นวีดีโอของ TikTok โดยตรง
+        # ใช้แท็ก iframe ของ TikTok
         iframe_code = f"""
         <div style="display: flex; justify-content: center;">
             <iframe 
@@ -33,13 +32,13 @@ if tiktok_url:
         </div>
         """
         
-        # แสดงผลวีดีโอ
-        components.html(iframe_code, height=780)
+        # จุดสำคัญที่เปลี่ยน: ใช้ st.markdown และเปิดตั้งค่า unsafe_allow_html=True
+        st.markdown(iframe_code, unsafe_allow_html=True)
         
-        # พื้นที่สำหรับใส่ลูกเล่นเพิ่มเติม เช่น จดบันทึก
+        # พื้นที่สำหรับใส่ลูกเล่นเพิ่มเติม
         notes = st.text_area("📝 บันทึกข้อมูลเกี่ยวกับสินค้า/ตะกร้านี้:")
         if st.button("บันทึกข้อมูล"):
             st.success("บันทึกข้อมูลสำเร็จ!")
             
     else:
-        st.error("❌ ไม่พบ Video ID ในลิงก์ กรุณาตรวจสอบลิงก์อีกครั้ง (ลิงก์ควรมีคำว่า /video/ตัวเลข)")
+        st.error("❌ ไม่พบ Video ID ในลิงก์ กรุณาตรวจสอบลิงก์อีกครั้ง")
