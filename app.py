@@ -1,44 +1,53 @@
 import streamlit as st
-import re
+import requests
 
 # ตั้งค่าหน้าเว็บ
 st.set_page_config(page_title="TikTok Affiliate Viewer", layout="wide")
 
-st.title("🛒 ระบบจัดการและดูวีดีโอ TikTok (ติดตะกร้า)")
-st.write("วางลิงก์วีดีโอ TikTok ที่คุณต้องการติดตามด้านล่างนี้")
+st.title("🛒 ระบบจัดการวีดีโอ TikTok (ติดตะกร้า)")
+st.write("ระบบนี้จะดึงข้อมูลหน้าปกคลิปมาให้คุณจดบันทึกรายละเอียดสินค้าได้ง่ายขึ้น")
 
 # ช่องสำหรับใส่ URL
 tiktok_url = st.text_input("🔗 ใส่ลิงก์วีดีโอ TikTok ตรงนี้:")
 
 if tiktok_url:
     st.markdown("---")
-    st.subheader("📺 วีดีโอของคุณ")
     
-    # ดึง Video ID
-    match = re.search(r"video/(\d+)", tiktok_url)
+    # ใช้ TikTok oEmbed API ดึงข้อมูลคลิป
+    api_url = f"https://www.tiktok.com/oembed?url={tiktok_url}"
     
-    if match:
-        video_id = match.group(1)
+    try:
+        response = requests.get(api_url)
+        data = response.json()
         
-        # ใช้แท็ก iframe ของ TikTok
-        iframe_code = f"""
-        <div style="display: flex; justify-content: center;">
-            <iframe 
-                src="https://www.tiktok.com/embed/v2/{video_id}" 
-                style="width: 325px; height: 750px; border: none; border-radius: 12px;" 
-                allow="autoplay; encrypted-media;" 
-                allowfullscreen>
-            </iframe>
-        </div>
-        """
-        
-        # จุดสำคัญที่เปลี่ยน: ใช้ st.markdown และเปิดตั้งค่า unsafe_allow_html=True
-        st.markdown(iframe_code, unsafe_allow_html=True)
-        
-        # พื้นที่สำหรับใส่ลูกเล่นเพิ่มเติม
-        notes = st.text_area("📝 บันทึกข้อมูลเกี่ยวกับสินค้า/ตะกร้านี้:")
-        if st.button("บันทึกข้อมูล"):
-            st.success("บันทึกข้อมูลสำเร็จ!")
+        if "title" in data:
+            col1, col2 = st.columns([1, 2])
             
-    else:
-        st.error("❌ ไม่พบ Video ID ในลิงก์ กรุณาตรวจสอบลิงก์อีกครั้ง")
+            with col1:
+                # แสดงภาพหน้าปก
+                if "thumbnail_url" in data:
+                    st.image(data["thumbnail_url"], use_container_width=True)
+                
+                # ปุ่มกดเด้งไปดูคลิปจริง (สีชมพูแบบ TikTok)
+                button_html = f'''
+                <a href="{tiktok_url}" target="_blank" style="display: block; width: 100%; padding: 10px 0; background-color: #FE2C55; color: white; text-align: center; text-decoration: none; border-radius: 8px; font-weight: bold; margin-top: 10px;">
+                    ▶️ คลิกดูวีดีโอคลิปนี้
+                </a>
+                '''
+                st.markdown(button_html, unsafe_allow_html=True)
+                
+            with col2:
+                # แสดงรายละเอียดคลิป
+                st.subheader(f"📌 {data['title']}")
+                st.write(f"👤 **ช่อง:** {data['author_name']}")
+                
+                # พื้นที่สำหรับใส่ลูกเล่นเพิ่มเติม
+                st.write("---")
+                notes = st.text_area("📝 บันทึกข้อมูลสินค้า / ค่าคอมมิชชัน / ตะกร้า:", height=150)
+                if st.button("💾 บันทึกข้อมูล"):
+                    st.success("บันทึกข้อมูลเรียบร้อย!")
+        else:
+            st.error("❌ ลิงก์ไม่ถูกต้อง หรือ TikTok ตั้งค่าคลิปนี้เป็นส่วนตัว")
+            
+    except Exception as e:
+        st.error("เกิดข้อผิดพลาดในการเชื่อมต่อกับ TikTok")
